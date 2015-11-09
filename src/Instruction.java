@@ -43,9 +43,6 @@ public abstract class Instruction {
         this.id = id;
     }
 
-    public String print(){
-        return null;
-    }
 
     public void printToConsole(){
 

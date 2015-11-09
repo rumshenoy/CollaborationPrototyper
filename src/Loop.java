@@ -5,7 +5,7 @@ import java.util.List;
  * Created by ramyashenoy on 10/8/15.
  */
 public class Loop  extends Instruction{
-    String guard;
+    Operand operand;
 
     public Loop() {
         this.block = new ArrayList<>();
@@ -19,12 +19,12 @@ public class Loop  extends Instruction{
         this.id = id;
     }
 
-    public String getGuard() {
-        return guard;
+    public Operand getOperand() {
+        return operand;
     }
 
-    public void setGuard(String guard) {
-        this.guard = guard;
+    public void setOperand(Operand guard) {
+        this.operand = guard;
     }
 
     String id;
@@ -37,17 +37,16 @@ public class Loop  extends Instruction{
         this.block = block;
     }
 
-    public String print(){
+    public void printToConsole(){
 
-        System.out.println("\t\twhile("+ guard + "){");
+        System.out.println("\t\twhile("+ this.operand.getGuard() + "){");
         if(block != null){
             for(Instruction instruction: block){
-                instruction.print();
+                instruction.printToConsole();
             }
 
         }
 
         System.out.println("\t\t}");
-        return null;
     }
 }

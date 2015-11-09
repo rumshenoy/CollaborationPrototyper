@@ -19,6 +19,15 @@ public class MessageNode extends Instruction {
     String arguments;
     List<MessageNode> childNodes = new ArrayList<>();
     String callerObject;
+    String operandId;
+
+    public String getOperandId() {
+        return operandId;
+    }
+
+    public void setOperandId(String operandId) {
+        this.operandId = operandId;
+    }
 
     public String getCallerObject() {
         return callerObject;

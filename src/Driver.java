@@ -116,7 +116,10 @@ public class Driver {
                                         Loop loop = new Loop();
                                         loop.setId(fragment._id);
                                         loop.setWeight(0);
-                                        loop.setGuard(fragment.operands.get(0).guard);
+                                        Operand opewith basirand = new Operand(fragment.operands.get(0)._id);
+                                        //loop can have only one operand--- one condition-- guard is made up of AND or OR's
+                                        operand.setGuard(fragment.operands.get(0).guard);
+                                        loop.setOperand(operand);
                                         instruction = loop;
                                         combinedFragments.add(loop);
                                     }
@@ -127,6 +130,15 @@ public class Driver {
                                         c.setWeight(0);
                                         instruction = c;
                                         combinedFragments.add(c);
+
+                                        Operand consequence = new Operand(fragment.operands.get(0)._id);
+                                        consequence.setGuard(fragment.operands.get(0).guard);
+                                        c.setConsequence(consequence);
+                                        if(fragment.operands.size() > 0){
+                                            Operand alternate = new Operand(fragment.operands.get(1)._id);
+                                            consequence.setGuard(fragment.operands.get(1).guard);
+                                            c.setAlternative(alternate);
+                                        }
                                     }
 
                                     if(fragment.tags != null){
@@ -226,6 +238,9 @@ public class Driver {
                                                 childMessage.setInCF(true);
                                                 childMessage.setCfID(tag.reference.$ref);
                                             }
+                                            if(tag.name.equals("operand")){
+                                                childMessage.setOperandId(tag.reference.$ref);
+                                            }
 
                                         }
                                     }
@@ -269,12 +284,9 @@ public class Driver {
                                 for(MessageNode childNode: childNodes){
                                     if(childNode.isInCF()){
                                         List<Instruction> combinedFragmentsList = combinedFragments.stream().filter(f -> f.getId().equals(childNode.getCfID())).collect(Collectors.toList());
+
                                         if(combinedFragmentsList.size() > 0){
                                             Instruction instruction = combinedFragmentsList.get(0);
-
-
-
-
                                             //get the topmost CF if it is in a tree
                                             Instruction parent = instruction.getParent();
                                             if(parent != null){
