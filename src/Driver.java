@@ -18,7 +18,8 @@ public class Driver {
         GsonBuilder builder = new GsonBuilder();
         List<MethodInvocation> methodInvocations = new ArrayList<>();
         Package mainPackage = new Package();
-
+        List<Guard> listOfGuards = new ArrayList<>();
+        Map<Guard, Instruction> guardToCFMap = new HashMap<>();
         List<Instruction> combinedFragments = new ArrayList<Instruction>();
         List<Operation> operationsList = new ArrayList<>();
 
@@ -123,6 +124,10 @@ public class Driver {
                                         loop.setGuard(guard);
                                         instruction = loop;
                                         combinedFragments.add(loop);
+                                        listOfGuards.add(guard);
+                                        guardToCFMap.put(guard, loop);
+
+
                                     }
 
                                     if (fragment.interactionOperator.equals("alt")) {
@@ -135,10 +140,18 @@ public class Driver {
                                         Guard consequence = new Guard(fragment.operands.get(0)._id);
                                         consequence.setCondition(fragment.operands.get(0).guard);
                                         c.setCons(consequence);
+                                        listOfGuards.add(consequence);
+                                        guardToCFMap.put(consequence, c);
+                                        consequence.setConsequence(true);
+
                                         if (fragment.operands.size() > 1) {
                                             Guard alternate = new Guard(fragment.operands.get(1)._id);
                                             alternate.setCondition(fragment.operands.get(1).guard);
                                             c.setAlt(alternate);
+                                            listOfGuards.add(alternate);
+                                            guardToCFMap.put(alternate, c);
+                                            alternate.setAlternative(true);
+
                                         }
                                     }
 
@@ -236,7 +249,6 @@ public class Driver {
                                             if (tag.name.equals("operand")) {
                                                 childMessage.setOperandId(tag.reference.$ref);
                                             }
-
                                         }
                                     }
 
@@ -286,28 +298,35 @@ public class Driver {
                                         if (childNode.isInCF()) {
                                             List<Instruction> combinedFragmentsList = combinedFragments.stream().filter(f -> f.getId().equals(childNode.getCfID())).collect(Collectors.toList());
 
-                                            if (combinedFragmentsList.size() > 0) {
-                                                Instruction instruction = combinedFragmentsList.get(0);
+                                            List<Guard> guardList = listOfGuards.stream().filter(f -> f.id.equals(childNode.getOperandId())).collect(Collectors.toList());
+
+                                            if (guardList.size() > 0) {
+                                                Guard currentGuard = guardList.get(0);
+                                                Instruction instruction = guardToCFMap.get(guardList.get(0));
                                                 //get the topmost CF if it is in a tree
                                                 Instruction parent = instruction.getParent();
-                                                if (instruction.getParent() != null) {
-                                                    while (true) {
-                                                        if (parent.getParent() == null) {
-                                                            break;
-                                                        } else {
-                                                            parent = parent.getParent();
-                                                        }
+
+                                                while(instruction.getParent() != null){
+                                                    instruction = instruction.getParent();
+                                                }
+
+                                                if(currentGuard.isConsequence){
+                                                    Conditional conditional = (Conditional)instruction;
+                                                    if(!conditional.getConsequence().contains(childNode)){
+                                                        conditional.getConsequence().add(childNode);
                                                     }
-                                                    if (!instruction.getBlock().contains(childNode)) {
-                                                        instruction.getBlock().add(childNode);
+                                                }
+                                                if(currentGuard.isAlternative){
+                                                    Conditional conditional = (Conditional)instruction;
+                                                    if(!conditional.getAlternative().contains(childNode)){
+                                                        conditional.getAlternative().add(childNode);
                                                     }
-                                                    if (!currentOperation.getBlock().contains(parent)) {
-                                                        currentOperation.getBlock().add(parent);
-                                                    }
-                                                } else {
-                                                    if (!instruction.getBlock().contains(childNode)) {
-                                                        instruction.getBlock().add(childNode);
-                                                    }
+                                                }
+                                                if(!currentGuard.isAlternative && !currentGuard.isConsequence){
+                                                    Loop loop = (Loop) instruction;
+                                                    loop.getBlock().add(childNode);
+                                                }
+                                                else{
                                                     if (!currentOperation.getBlock().contains(instruction)) {
                                                         currentOperation.getBlock().add(instruction);
                                                     }

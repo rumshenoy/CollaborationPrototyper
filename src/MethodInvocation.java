@@ -171,8 +171,7 @@ public class MethodInvocation extends Instruction {
     public void printToConsole() {
         if (operation != null) {
             if (assignmentTarget != null) {
-                System.out.print("\t\t" + operation.returnType + " ");
-                System.out.print(assignmentTarget + " = ");
+                System.out.print("\t\t" + assignmentTarget + " = ");
             } else {
                 System.out.print("\t\t");
             }
@@ -200,8 +199,7 @@ public class MethodInvocation extends Instruction {
         String data = "";
         if (operation != null) {
             if (assignmentTarget != null) {
-                data+="\t\t" + operation.returnType + " ";
-                data+=assignmentTarget + " = ";
+                data+="\t\t" + assignmentTarget + " = ";
             } else {
                 data+="\t\t";
             }

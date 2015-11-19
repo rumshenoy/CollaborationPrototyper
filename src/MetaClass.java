@@ -147,9 +147,23 @@ public class MetaClass {
     }
 
     public void printToConsole() {
-        System.out.println("class " + this.name + "{");
+        System.out.print("class " + this.name + " ");
+        if(generalizations.size() > 0){
+            MetaClass metaClass = generalizations.get(0); //there cna only be one generalization
+            System.out.print("extends" + " " + metaClass.name);
+        }
+        if(interfaceRealizations.size() > 0){
+            System.out.print("implements ");
+            for(int i = 0; i < interfaceRealizations.size(); i++){
+                System.out.print(interfaceRealizations.get(i).name);
+                if(i < interfaceRealizations.size() -1){
+                    System.out.print(", ");
+                }
+            }
+        }
+        System.out.println("{");
         for(Field field: this.fields){
-            System.out.println("\t" + field.getType() + " " + field.getName() + ";");
+            System.out.println("\t" + field.getVisibility() + " " + field.getType() + " " + field.getName() + ";");
         }
 
         for(Operation operation: operations){
