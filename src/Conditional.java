@@ -6,29 +6,31 @@ import java.util.ArrayList;
 public class Conditional extends Instruction {
 
     String id;
-    Operand consequence;
+    Guard cons;
+    ArrayList<Instruction> consequence;
+    ArrayList<Instruction> alternative;
 
     public Conditional() {
         this.block = new ArrayList<>();
     }
 
-    public Operand getConsequence() {
-        return consequence;
+    public Guard getCons() {
+        return cons;
     }
 
-    public void setConsequence(Operand consequence) {
-        this.consequence = consequence;
+    public void setCons(Guard cons) {
+        this.cons = cons;
     }
 
-    public Operand getAlternative() {
-        return alternative;
+    public Guard getAlt() {
+        return alt;
     }
 
-    public void setAlternative(Operand alternative) {
-        this.alternative = alternative;
+    public void setAlt(Guard alt) {
+        this.alt = alt;
     }
 
-    Operand alternative;
+    Guard alt;
 
     public String getId() {
         return id;
@@ -41,16 +43,47 @@ public class Conditional extends Instruction {
 
     public void printToConsole(){
 
-            System.out.print("if(" + consequence.getGuard() + " ){");
+            System.out.println("\t\t" + "if(" + cons.getCondition() + " ){");
             for(Instruction instruction: this.block){
-                MessageNode messageNode = (MessageNode) instruction;
-                if(messageNode.operandId == consequence.id){
-                    messageNode.printToConsole();
+                MethodInvocation methodInvocation = (MethodInvocation) instruction;
+                if(methodInvocation.operandId.equals(cons.id)){
+                    methodInvocation.printToConsole();
                 }
             }
-            System.out.println("}");
+        System.out.println("\t\t" + "}");
+        if(alt != null){
+            System.out.println("\t\t" + "else{");
+            for(Instruction instruction: this.block){
+                MethodInvocation methodInvocation = (MethodInvocation) instruction;
+                if(methodInvocation.operandId.equals(alt.id)){
+                    methodInvocation.printToConsole();
+                }
+            }
+        }
+
+            System.out.println("\t\t}");
 
         System.out.println("\t\t}");
     }
 
+    public String print(){
+        String data = "";
+        data+="\t\t" + "if(" + cons.getCondition() + " ){";
+        for(Instruction instruction: this.block){
+            MethodInvocation methodInvocation = (MethodInvocation) instruction;
+            if(methodInvocation.operandId.equals(cons.id)){
+                methodInvocation.print();
+            }
+        }
+        data+="\t\t" + "}";
+        data+="\t\t" + "else{";
+        for(Instruction instruction: this.block){
+            MethodInvocation methodInvocation = (MethodInvocation) instruction;
+            if(methodInvocation.operandId.equals(alt.id)){
+                methodInvocation.print();
+            }
+        }
+        data+="\t\t}";
+        return data;
+    }
 }

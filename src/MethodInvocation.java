@@ -4,7 +4,7 @@ import java.util.List;
 /**
  * Created by ramyashenoy on 9/1/15.
  */
-public class MessageNode extends Instruction {
+public class MethodInvocation extends Instruction {
     String name;
     String assignmentTarget;
     MetaClass source;
@@ -17,7 +17,7 @@ public class MessageNode extends Instruction {
     String cfID = null;
     Operation operation;
     String arguments;
-    List<MessageNode> childNodes = new ArrayList<>();
+    List<MethodInvocation> childNodes = new ArrayList<>();
     String callerObject;
     String operandId;
 
@@ -146,7 +146,7 @@ public class MessageNode extends Instruction {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        MessageNode that = (MessageNode) o;
+        MethodInvocation that = (MethodInvocation) o;
 
         if (assignmentTarget != null ? !assignmentTarget.equals(that.assignmentTarget) : that.assignmentTarget != null)
             return false;
@@ -182,6 +182,17 @@ public class MessageNode extends Instruction {
             }
             System.out.print(")");
             System.out.println(";");
+        }else{
+            if(this.messageSort.equals("reply")){
+                System.out.println("\t\treturn " + this.name + ";");
+            }
+
+            if(this.messageSort.equals("synchCall")){
+                if(assignmentTarget != null){
+                    System.out.print("\t\t" + assignmentTarget + " = ");
+                }
+                System.out.println(name + ";");
+            }
         }
     }
 
@@ -192,14 +203,25 @@ public class MessageNode extends Instruction {
                 data+="\t\t" + operation.returnType + " ";
                 data+=assignmentTarget + " = ";
             } else {
-                data +="\t\t";
+                data+="\t\t";
             }
-            data +=callerObject + "." + operation.name + "(";
+            data+=callerObject + "." + operation.name + "(";
             if(arguments != null){
                 data+=arguments;
             }
-            data +=")";
-            data +=";";
+            data+=")";
+            data+=";";
+        }else{
+            if(this.messageSort.equals("reply")){
+                data+="\t\treturn " + this.name + ";";
+            }
+
+            if(this.messageSort.equals("synchCall")){
+                if(assignmentTarget != null){
+                    data+="\t\t" + assignmentTarget + " = ";
+                }
+                data+=name + ";";
+            }
         }
         return data;
     }

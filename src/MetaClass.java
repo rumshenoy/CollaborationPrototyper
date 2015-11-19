@@ -101,50 +101,50 @@ public class MetaClass {
         }
     }
 
-//    public void print() throws IOException{
-//        String data = "";
-//        data+="class " + this.name + "{" + "\n";
-//        for(Field field: this.fields){
-//            data+="\t" + field.getType() + " " + field.getName() + ";";
-//        }
-//
-//        for(Operation operation: operations){
-//            data+="\t" + operation.visibility + " ";
-//
-//            data+=operation.returnType + " ";
-//
-//            data+=operation.name + "(";
-//            if(operation.parameters.size() > 0){
-//                for(Parameter parameter: operation.parameters){
-//                    data+=parameter.type + " " + parameter.name;
-//                }
-//            }
-//
-//            data+="){\n";
-//            for(Instruction instruction: operation.getBlock()){
-//                data +=instruction.print();
-//            }
-//            data+="\t}\n";
-//        }
-//        data+="}";
-//        BufferedWriter out = null;
-//        try
-//        {
-//            FileWriter fstream = new FileWriter("javaFiles/" + this.name + ".java", true); //true tells to append data.
-//            out = new BufferedWriter(fstream);
-//            out.write(data);
-//        }
-//        catch (IOException e)
-//        {
-//            System.err.println("Error: " + e.getMessage());
-//        }
-//        finally
-//        {
-//            if(out != null) {
-//                out.close();
-//            }
-//        }
-//    }
+    public void print() throws IOException{
+        String data = "";
+        data +="class " + this.name + "{";
+        for(Field field: this.fields){
+            data +="\t" + field.getType() + " " + field.getName() + ";";
+        }
+
+        for(Operation operation: operations){
+            data+="\t" + operation.visibility + " ";
+
+            data+=operation.returnType + " ";
+
+            data+=operation.name + "(";
+            if(operation.parameters.size() > 0){
+                for(Parameter parameter: operation.parameters){
+                    data+=parameter.type + " " + parameter.name;
+                }
+            }
+
+            data+="){\n";
+            for(Instruction instruction: operation.getBlock()){
+                instruction.print();
+            }
+            data+="\t}\n";
+        }
+        data +="}";
+        BufferedWriter out = null;
+        try
+        {
+            FileWriter fstream = new FileWriter("javaFiles/" + this.name + ".java", true); //true tells to append data.
+            out = new BufferedWriter(fstream);
+            out.write(data);
+        }
+        catch (IOException e)
+        {
+            System.err.println("Error: " + e.getMessage());
+        }
+        finally
+        {
+            if(out != null) {
+                out.close();
+            }
+        }
+    }
 
     public void printToConsole() {
         System.out.println("class " + this.name + "{");

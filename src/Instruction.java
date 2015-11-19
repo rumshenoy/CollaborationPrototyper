@@ -47,4 +47,7 @@ public abstract class Instruction {
     public void printToConsole(){
 
     }
+    public String print(){
+        return ""   ;
+    }
 }

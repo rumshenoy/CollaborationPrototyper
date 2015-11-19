@@ -1,25 +1,23 @@
 import com.google.gson.*;
-
 import java.io.FileReader;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.concurrent.locks.Condition;
 import java.util.stream.Collectors;
 
 
 //handle inherited methods from interface or from class
 //check if its an interface then we don specify the function behaviour either
 public class Driver {
-    public static Map<MessageNode, String> operationMap = new HashMap<>();
+    public static Map<MethodInvocation, String> operationMap = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
         List<MetaClass> metaClasses = new ArrayList<>();
         List<LifeLine> lifeLines = new ArrayList<>();
-
-        MessageNode parentMessage = new MessageNode();
-        MessageNode rootMessage = new MessageNode();
+        List<MethodInvocation> rootMessages = new ArrayList<>();
+        MethodInvocation parentMessage = new MethodInvocation();
         GsonBuilder builder = new GsonBuilder();
-        List<MessageNode> messageNodes = new ArrayList<>();
+        List<MethodInvocation> methodInvocations = new ArrayList<>();
+        Package mainPackage = new Package();
 
         List<Instruction> combinedFragments = new ArrayList<Instruction>();
         List<Operation> operationsList = new ArrayList<>();
@@ -32,6 +30,8 @@ public class Driver {
             List<Element> umlElements = myTypes.ownedElements.stream().filter(f -> f._type.equals("UMLModel")).collect(Collectors.toList());
             if (umlElements.size() > 0) { //There has be to atleast one UMLModel package
                 Element element = umlElements.get(0);
+                //package that the classes are supposed to be in
+                mainPackage.setName(element.name);
                 List<Element> umlPackages = element.ownedElements.stream().filter(g -> g._type.equals("UMLPackage")).collect(Collectors.toList());
                 if (umlPackages.size() > 1) {//There has to be two packages- one for class one for behaviour
                     Element classes = umlPackages.get(0);
@@ -83,12 +83,12 @@ public class Driver {
 
                     //*--------------------------CLASSES-------------------------------*//
 
-                    //*-----------------------BEHAVIOUR---------------------------------*//
+                    //*-----------------------  BEHAVIOUR---------------------------------*//
                     for (Element umlCollaboration : behaviour.getOwnedElements()) {
                         //Role to Class mapping
                         ArrayList<Element> attributes = umlCollaboration.attributes;
                         HashMap<String, MetaClass> roleToClassMap = new HashMap<>();
-                        if(attributes != null){
+                        if (attributes != null) {
                             for (Element attribute : attributes) {
                                 List<MetaClass> roleClass = metaClasses.stream().filter(f -> f._id.equals(attribute.type.$ref)).collect(Collectors.toList());
                                 roleToClassMap.put(attribute._id, roleClass.get(0));
@@ -99,53 +99,54 @@ public class Driver {
 
                             //mapping lifelines to the classes they correspond
                             ArrayList<Element> participants = umlInteraction.participants;
-                            for (Element participant : participants) {
-                                MetaClass participantClass = roleToClassMap.get(participant.represent.$ref);
-                                LifeLine lifeLine = new LifeLine();
-                                lifeLine.setName(participant.name);
-                                lifeLine.setId(participant._id);
-                                lifeLine.setMetaClass(participantClass);
-                                lifeLines.add(lifeLine);
+                            if (participants != null && participants.size() > 0) {
+                                for (Element participant : participants) {
+                                    MetaClass participantClass = roleToClassMap.get(participant.represent.$ref);
+                                    LifeLine lifeLine = new LifeLine();
+                                    lifeLine.setName(participant.name);
+                                    lifeLine.setId(participant._id);
+                                    lifeLine.setMetaClass(participantClass);
+                                    lifeLines.add(lifeLine);
+                                }
                             }
-
                             //first parse all the combined fragments and get ready
-                            if(umlInteraction.fragments != null){
-                                for(Element fragment: umlInteraction.fragments){                                    //depending on the fragment set the class
+                            if (umlInteraction.fragments != null) {
+                                for (Element fragment : umlInteraction.fragments) {                                    //depending on the fragment set the class
                                     Instruction instruction = null;
-                                    if(fragment.interactionOperator.equals("loop")){
+                                    if (fragment.interactionOperator.equals("loop")) {
                                         Loop loop = new Loop();
                                         loop.setId(fragment._id);
                                         loop.setWeight(0);
-                                        Operand opewith basirand = new Operand(fragment.operands.get(0)._id);
-                                        //loop can have only one operand--- one condition-- guard is made up of AND or OR's
-                                        operand.setGuard(fragment.operands.get(0).guard);
-                                        loop.setOperand(operand);
+                                        Guard guard = new Guard(fragment.operands.get(0)._id);
+                                        //loop can have only one condition--- one condition-- condition is made up of AND or OR's
+                                        guard.setCondition(fragment.operands.get(0).guard);
+                                        loop.setGuard(guard);
                                         instruction = loop;
                                         combinedFragments.add(loop);
                                     }
 
-                                    if(fragment.interactionOperator.equals("alt")){
+                                    if (fragment.interactionOperator.equals("alt")) {
                                         Conditional c = new Conditional();
                                         c.setId(fragment._id);
                                         c.setWeight(0);
                                         instruction = c;
                                         combinedFragments.add(c);
 
-                                        Operand consequence = new Operand(fragment.operands.get(0)._id);
-                                        consequence.setGuard(fragment.operands.get(0).guard);
-                                        c.setConsequence(consequence);
-                                        if(fragment.operands.size() > 0){
-                                            Operand alternate = new Operand(fragment.operands.get(1)._id);
-                                            consequence.setGuard(fragment.operands.get(1).guard);
-                                            c.setAlternative(alternate);
+                                        Guard consequence = new Guard(fragment.operands.get(0)._id);
+                                        consequence.setCondition(fragment.operands.get(0).guard);
+                                        c.setCons(consequence);
+                                        if (fragment.operands.size() > 1) {
+                                            Guard alternate = new Guard(fragment.operands.get(1)._id);
+                                            alternate.setCondition(fragment.operands.get(1).guard);
+                                            c.setAlt(alternate);
                                         }
                                     }
 
-                                    if(fragment.tags != null){
-                                        for(Element tag: fragment.tags){
-                                            if(tag.name.equals("parent")){
+                                    if (fragment.tags != null) {
+                                        for (Element tag : fragment.tags) {
+                                            if (tag.name.equals("parent")) {
                                                 List<Instruction> instructionList = combinedFragments.stream().filter(e -> e.getId().equals(tag.reference.$ref)).collect(Collectors.toList());
-                                                if(instructionList.size() > 0){
+                                                if (instructionList.size() > 0) {
                                                     instructionList.get(0).getBlock().add(instruction);
                                                     instruction.setParent(instructionList.get(0));
                                                 }
@@ -159,8 +160,6 @@ public class Driver {
 
                             //parsing the messages and make nodes out them to later build a tree from the lifelines
                             ArrayList<Element> messages = umlInteraction.messages;
-
-
                             Element startMessage = messages.get(0);
                             String sourceRef = startMessage.source.$ref;
                             String targetRef = startMessage.target.$ref;
@@ -170,7 +169,7 @@ public class Driver {
                             LifeLine targetLifeLine = getLifeLine(lifeLines, targetRef);
 
                             //First message processing
-                            parentMessage = new MessageNode();
+                            parentMessage = new MethodInvocation();
                             parentMessage.setAssignmentTarget(startMessage.assignmentTarget);
                             parentMessage.setMessageSort(startMessage.messageSort);
                             parentMessage.setSource(sourceLifeLine.getMetaClass());
@@ -180,27 +179,26 @@ public class Driver {
                             parentMessage.setCallerObject(targetLifeLine.getName());
                             int weight = 0;
                             parentMessage.setWeight(weight++);
-                            if(startMessage.signature != null){
+                            if (startMessage.signature != null) {
                                 parentMessage.setSignature(startMessage.signature.$ref);
                             }
 
                             if (startMessage.tags != null) {
                                 for (Element tag : startMessage.tags) {
-                                    if (tag.name.equals("Ref")) {
-                                        parentMessage.setCaller(tag.value);
-                                    }
-
-                                    if(tag.name.equals("CF")){
+                                    if (tag.name.equals("CF")) {
                                         parentMessage.setInCF(true);
                                         parentMessage.setCfID(tag.reference.$ref);
+                                    }
+                                    if (tag.name.equals("operand")) {
+                                        parentMessage.setOperandId(tag.reference.$ref);
                                     }
                                 }
                             }
 
 
-                            rootMessage = parentMessage;
-                            messageNodes.add(rootMessage);
-
+                            MethodInvocation rootMessage = parentMessage;
+                            methodInvocations.add(rootMessage);
+                            rootMessages.add(rootMessage);
                             Iterator<Element> iter = messages.iterator();
                             while (iter.hasNext()) {
                                 if (iter.next() == endMessage) {
@@ -215,7 +213,7 @@ public class Driver {
                                     LifeLine childSource = getLifeLine(lifeLines, child.source.$ref);
                                     LifeLine childTarget = getLifeLine(lifeLines, child.target.$ref);
 
-                                    MessageNode childMessage = new MessageNode();
+                                    MethodInvocation childMessage = new MethodInvocation();
                                     childMessage.setMessageSort(child.messageSort);
                                     childMessage.setSource(childSource.getMetaClass());
                                     childMessage.setTarget(childTarget.getMetaClass());
@@ -231,14 +229,11 @@ public class Driver {
 
                                     if (child.tags != null) {
                                         for (Element tag : child.tags) {
-                                            if (tag.name.equals("Ref")) {
-                                                childMessage.setCaller(tag.value);
-                                            }
-                                            if(tag.name.equals("CF")){
+                                            if (tag.name.equals("CF")) {
                                                 childMessage.setInCF(true);
                                                 childMessage.setCfID(tag.reference.$ref);
                                             }
-                                            if(tag.name.equals("operand")){
+                                            if (tag.name.equals("operand")) {
                                                 childMessage.setOperandId(tag.reference.$ref);
                                             }
 
@@ -246,14 +241,18 @@ public class Driver {
                                     }
 
                                     parentMessage.childNodes.add(childMessage);
-                                    messageNodes.add(childMessage);
+                                    methodInvocations.add(childMessage);
                                 }
 
                                 if (childMessages.size() > 0) {
-                                    startMessage = childMessages.get(0);
+                                    List<MethodInvocation> nextMessage = parentMessage.childNodes.stream().filter(f -> !f.source.equals(f.target)).collect(Collectors.toList());
+                                    List<Element> startMessageNext = childMessages.stream().filter(f -> !f.source.$ref.equals(f.target.$ref)).collect(Collectors.toList());
+                                    startMessage = startMessageNext.get(0);
                                     targetRef = startMessage.target.$ref;
                                     sourceRef = startMessage.source.$ref;
-                                    parentMessage = parentMessage.childNodes.get(0);
+
+                                    parentMessage = nextMessage.get(0);
+
                                     if (childMessages.size() > 1) {
                                         endMessage = childMessages.get(childMessages.size() - 1);
                                     }
@@ -262,57 +261,68 @@ public class Driver {
                             }
                         }
 
-                        for (MessageNode messageNode : messageNodes) {
-                            List<Operation> matchingOperation = operationsList.stream().filter(f -> f._id.equals(messageNode.getSignature())).collect(Collectors.toList());
+                        for (MethodInvocation methodInvocation : methodInvocations) {
+                            List<Operation> matchingOperation = operationsList.stream().filter(f -> f._id.equals(methodInvocation.getSignature())).collect(Collectors.toList());
                             if (matchingOperation.size() > 0) {
-                                operationMap.put(messageNode, matchingOperation.get(0)._id);
-                                messageNode.setOperation(matchingOperation.get(0));
+                                operationMap.put(methodInvocation, matchingOperation.get(0)._id);
+                                methodInvocation.setOperation(matchingOperation.get(0));
                             }
                         }
 
                         Stack stack = new Stack();
-                        stack.push(messageNodes.get(0));
-                        while(!stack.empty()){
-                            MessageNode messageNode = (MessageNode)stack.pop();
-                            Operation currentOperation = messageNode.getOperation();
-                            if(currentOperation != null){
-                                //all child nodes of this node make up its body
-                                List<MessageNode> childNodes = messageNode.childNodes;
-                                for(MessageNode child: childNodes){
-                                    stack.push(child);
-                                }
-                                for(MessageNode childNode: childNodes){
-                                    if(childNode.isInCF()){
-                                        List<Instruction> combinedFragmentsList = combinedFragments.stream().filter(f -> f.getId().equals(childNode.getCfID())).collect(Collectors.toList());
+                        for(MethodInvocation root: methodInvocations){
+                            stack.push(root);
+                            while (!stack.empty()) {
+                                MethodInvocation methodInvocation = (MethodInvocation) stack.pop();
+                                Operation currentOperation = methodInvocation.getOperation();
 
-                                        if(combinedFragmentsList.size() > 0){
-                                            Instruction instruction = combinedFragmentsList.get(0);
-                                            //get the topmost CF if it is in a tree
-                                            Instruction parent = instruction.getParent();
-                                            if(parent != null){
-                                                while(true){
-                                                    if(parent.getParent() == null){
-                                                        break;
-                                                    }else{
-                                                        parent = parent.getParent();
+                                if (currentOperation !=  null) {
+                                    //all child nodes of this node make up its body
+                                    List<MethodInvocation> childNodes = methodInvocation.childNodes;
+                                    for (MethodInvocation child : childNodes) {
+                                        stack.push(child);
+                                    }
+                                    for (MethodInvocation childNode : childNodes) {
+                                        if (childNode.isInCF()) {
+                                            List<Instruction> combinedFragmentsList = combinedFragments.stream().filter(f -> f.getId().equals(childNode.getCfID())).collect(Collectors.toList());
+
+                                            if (combinedFragmentsList.size() > 0) {
+                                                Instruction instruction = combinedFragmentsList.get(0);
+                                                //get the topmost CF if it is in a tree
+                                                Instruction parent = instruction.getParent();
+                                                if (instruction.getParent() != null) {
+                                                    while (true) {
+                                                        if (parent.getParent() == null) {
+                                                            break;
+                                                        } else {
+                                                            parent = parent.getParent();
+                                                        }
+                                                    }
+                                                    if (!instruction.getBlock().contains(childNode)) {
+                                                        instruction.getBlock().add(childNode);
+                                                    }
+                                                    if (!currentOperation.getBlock().contains(parent)) {
+                                                        currentOperation.getBlock().add(parent);
+                                                    }
+                                                } else {
+                                                    if (!instruction.getBlock().contains(childNode)) {
+                                                        instruction.getBlock().add(childNode);
+                                                    }
+                                                    if (!currentOperation.getBlock().contains(instruction)) {
+                                                        currentOperation.getBlock().add(instruction);
                                                     }
                                                 }
-                                                if(!instruction.getBlock().contains(childNode)){
-                                                    instruction.getBlock().add(childNode);
-                                                }
-                                                if(!currentOperation.getBlock().contains(parent)){
-                                                    currentOperation.getBlock().add(parent);
-                                                }
-                                            }
 
-                                        }
-                                    }else{
-                                        if(!currentOperation.getBlock().contains(childNode)){
-                                            currentOperation.getBlock().add(childNode);
+                                            }
+                                        } else {
+                                            if (!currentOperation.getBlock().contains(childNode)) {
+                                                currentOperation.getBlock().add(childNode);
+                                            }
                                         }
                                     }
                                 }
                             }
+
                         }
 
                     }
@@ -323,7 +333,7 @@ public class Driver {
         //printAllData(metaClasses);
 //        while (rootMessage.childNodes != null || rootMessage.childNodes.size() > 0) {
 //            System.out.println("parent " + rootMessage.name);
-//            for (MessageNode child : rootMessage.childNodes) {
+//            for (MethodInvocation child : rootMessage.childNodes) {
 //                System.out.println("child " + child.name);
 //            }
 //            if (rootMessage.childNodes.size() > 0) {
@@ -333,16 +343,16 @@ public class Driver {
 //            }
 //        }
 
+        mainPackage.print();
 
-
-        for(MetaClass metaClass :metaClasses ){
-            if(metaClass.name.equals("Main")){
+        for (MetaClass metaClass : metaClasses) {
+            if (metaClass.name.equals("Main")) {
                 continue;
-            }else{
+            } else {
                 metaClass.printToConsole();
             }
         }
-
+        mainPackage.setClasses(metaClasses);
     }
 
     private static LifeLine getLifeLine(List<LifeLine> lifeLines, String $ref) {
@@ -350,9 +360,15 @@ public class Driver {
         return list.get(0);
     }
 
+
     private static List<Element> getChildMessages(List<Element> messages, String $ref) {
         List<Element> childMessages = messages.stream().filter(f -> (f.source.$ref.equals($ref) && !f.name.contains("result")) || (f.target.$ref.equals($ref) && f.name.contains("result"))).collect(Collectors.toList());
         return childMessages;
+    }
+
+    private static List<Element> getNextParent(List<Element> messages, String $ref) {
+        List<Element> nextMessage = messages.stream().filter(f -> (f.source.$ref.equals($ref) && !f.name.contains("result")) || (f.target.$ref.equals($ref) && f.name.contains("result")) && !(f.source.equals(f.target))).collect(Collectors.toList());
+        return nextMessage;
     }
 
     public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
@@ -363,6 +379,7 @@ public class Driver {
         }
         return null;
     }
+
 }
 
 class Element {
