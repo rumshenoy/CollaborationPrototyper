@@ -207,8 +207,7 @@ public class MethodInvocation extends Instruction {
             if(arguments != null){
                 data+=arguments;
             }
-            data+=")";
-            data+=";";
+            data+=");";
         }else{
             if(this.messageSort.equals("reply")){
                 data+="\t\treturn " + this.name + ";";

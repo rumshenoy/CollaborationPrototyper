@@ -55,7 +55,7 @@ public class Loop  extends Instruction{
         data+="\t\twhile("+ this.guard.getCondition() + "){";
         if(block != null){
             for(Instruction instruction: block){
-                instruction.printToConsole();
+                instruction.print();
             }
 
         }

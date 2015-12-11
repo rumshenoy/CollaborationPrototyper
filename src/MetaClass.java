@@ -103,30 +103,66 @@ public class MetaClass {
 
     public void print() throws IOException{
         String data = "";
-        data +="class " + this.name + "{";
+        if(this.isInterface){
+            data+="interface " +this.name + " ";
+        }else{
+            data+="class " + this.name + " ";
+        }
+
+        if(generalizations.size() > 0){
+            MetaClass metaClass = generalizations.get(0); //there cna only be one generalization
+            data+="extends" + " " + metaClass.name;
+        }
+        if(interfaceRealizations.size() > 0){
+            data+="implements ";
+            for(int i = 0; i < interfaceRealizations.size(); i++){
+                data+=interfaceRealizations.get(i).name;
+                if(i < interfaceRealizations.size() -1){
+                    data+=", ";
+                }
+            }
+        }
+        data+="{"+ "\n";
         for(Field field: this.fields){
-            data +="\t" + field.getType() + " " + field.getName() + ";";
+            data+="\t" + field.getVisibility() + " " + field.getType() + " " + field.getName() + ";" +"\n";
         }
 
         for(Operation operation: operations){
-            data+="\t" + operation.visibility + " ";
+            if(isInterface){
+                data+="\t" + operation.visibility + " ";
 
-            data+=operation.returnType + " ";
+                data+=operation.returnType + " ";
 
-            data+=operation.name + "(";
-            if(operation.parameters.size() > 0){
-                for(Parameter parameter: operation.parameters){
-                    data+=parameter.type + " " + parameter.name;
+                data+=operation.name + "(";
+                if(operation.parameters.size() > 0){
+                    for(Parameter parameter: operation.parameters){
+                        data+=parameter.type + " " + parameter.name;
+                    }
                 }
-            }
 
-            data+="){\n";
-            for(Instruction instruction: operation.getBlock()){
-                instruction.print();
+                data+=");\n";
+
+            }else{
+                data+="\t" + operation.visibility + " ";
+
+                data+=operation.returnType + " ";
+
+                data+=operation.name + "(";
+                if(operation.parameters.size() > 0){
+                    for(Parameter parameter: operation.parameters){
+                        data+=parameter.type + " " + parameter.name;
+                    }
+                }
+
+                data+="){\n";
+                for(Instruction instruction: operation.getBlock()){
+                    data +=instruction.print() + "\n";
+                }
+                data+="\t}\n";
             }
-            data+="\t}\n";
         }
-        data +="}";
+        data+="}";
+
         BufferedWriter out = null;
         try
         {

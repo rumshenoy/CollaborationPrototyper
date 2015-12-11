@@ -79,24 +79,21 @@ public class Conditional extends Instruction {
     }
 
     public String print(){
-        //change accordingly
         String data = "";
-        data+="\t\t" + "if(" + cons.getCondition() + "){";
-        for(Instruction instruction: this.block){
+        data+="\t\t" + "if(" + cons.getCondition() + "){" + "\n";
+        for(Instruction instruction: this.consequence){
             MethodInvocation methodInvocation = (MethodInvocation) instruction;
-            if(methodInvocation.operandId.equals(cons.id)){
-                methodInvocation.print();
-            }
+            data +=methodInvocation.print() +"\n";
         }
         data+="\t\t" + "}";
-        data+="\t\t" + "else{";
-        for(Instruction instruction: this.block){
-            MethodInvocation methodInvocation = (MethodInvocation) instruction;
-            if(methodInvocation.operandId.equals(alt.id)){
-                methodInvocation.print();
+        if(alt != null){
+            data+="\t\t" + "else{";
+            for(Instruction instruction: this.alternative){
+                MethodInvocation methodInvocation = (MethodInvocation) instruction;
+                data+=methodInvocation.print()+"\n";
             }
+            data+="\t\t}";
         }
-        data+="\t\t}";
         return data;
     }
 }

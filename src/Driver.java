@@ -198,10 +198,10 @@ public class Driver {
 
                             if (startMessage.tags != null) {
                                 for (Element tag : startMessage.tags) {
-                                    if (tag.name.equals("CF")) {
-                                        parentMessage.setInCF(true);
-                                        parentMessage.setCfID(tag.reference.$ref);
-                                    }
+//                                    if (tag.name.equals("CF")) {
+//                                        parentMessage.setInCF(true);
+//                                        parentMessage.setCfID(tag.reference.$ref);
+//                                    }
                                     if (tag.name.equals("operand")) {
                                         parentMessage.setOperandId(tag.reference.$ref);
                                     }
@@ -242,10 +242,10 @@ public class Driver {
 
                                     if (child.tags != null) {
                                         for (Element tag : child.tags) {
-                                            if (tag.name.equals("CF")) {
-                                                childMessage.setInCF(true);
-                                                childMessage.setCfID(tag.reference.$ref);
-                                            }
+//                                            if (tag.name.equals("CF")) {
+//                                                childMessage.setInCF(true);
+//                                                childMessage.setCfID(tag.reference.$ref);
+//                                            }
                                             if (tag.name.equals("operand")) {
                                                 childMessage.setOperandId(tag.reference.$ref);
                                             }
@@ -295,7 +295,7 @@ public class Driver {
                                         stack.push(child);
                                     }
                                     for (MethodInvocation childNode : childNodes) {
-                                        if (childNode.isInCF()) {
+                                        if (childNode.getOperandId() != null) {
                                             List<Instruction> combinedFragmentsList = combinedFragments.stream().filter(f -> f.getId().equals(childNode.getCfID())).collect(Collectors.toList());
 
                                             List<Guard> guardList = listOfGuards.stream().filter(f -> f.id.equals(childNode.getOperandId())).collect(Collectors.toList());
@@ -368,7 +368,7 @@ public class Driver {
             if (metaClass.name.equals("Main")) {
                 continue;
             } else {
-                metaClass.printToConsole();
+                metaClass.print();
             }
         }
         mainPackage.setClasses(metaClasses);
