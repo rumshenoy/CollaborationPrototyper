@@ -101,7 +101,7 @@ public class MetaClass {
         }
     }
 
-    public void print() throws IOException{
+    public String print() throws IOException{
         String data = "";
         if(this.isInterface){
             data+="interface " +this.name + " ";
@@ -162,24 +162,8 @@ public class MetaClass {
             }
         }
         data+="}";
+        return data;
 
-        BufferedWriter out = null;
-        try
-        {
-            FileWriter fstream = new FileWriter("javaFiles/" + this.name + ".java", true); //true tells to append data.
-            out = new BufferedWriter(fstream);
-            out.write(data);
-        }
-        catch (IOException e)
-        {
-            System.err.println("Error: " + e.getMessage());
-        }
-        finally
-        {
-            if(out != null) {
-                out.close();
-            }
-        }
     }
 
     public void printToConsole() {

@@ -1,5 +1,6 @@
 import com.google.gson.*;
-import java.io.FileReader;
+
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -7,10 +8,10 @@ import java.util.stream.Collectors;
 
 //handle inherited methods from interface or from class
 //check if its an interface then we don specify the function behaviour either
-public class Driver {
+public class Program {
     public static Map<MethodInvocation, String> operationMap = new HashMap<>();
 
-    public static void main(String[] args) throws Exception {
+    public void generate(String inputFileName) throws Exception {
         List<MetaClass> metaClasses = new ArrayList<>();
         List<LifeLine> lifeLines = new ArrayList<>();
         List<MethodInvocation> rootMessages = new ArrayList<>();
@@ -23,10 +24,11 @@ public class Driver {
         List<Instruction> combinedFragments = new ArrayList<Instruction>();
         List<Operation> operationsList = new ArrayList<>();
 
+
         builder.registerTypeAdapter(RefObject.class, new RefObjectJsonDeSerializer());
         Gson gson = builder.create();
 
-        Element myTypes = gson.fromJson(new FileReader("src/basic.json"), Element.class);
+        Element myTypes = gson.fromJson(new FileReader(inputFileName), Element.class);
         if (myTypes._type.equals("Project")) {
             List<Element> umlElements = myTypes.ownedElements.stream().filter(f -> f._type.equals("UMLModel")).collect(Collectors.toList());
             if (umlElements.size() > 0) { //There has be to atleast one UMLModel package
@@ -189,7 +191,11 @@ public class Driver {
                             parentMessage.setTarget(targetLifeLine.getMetaClass());
                             parentMessage.setName(startMessage.name);
                             parentMessage.setId(startMessage._id);
-                            parentMessage.setCallerObject(targetLifeLine.getName());
+                            if(sourceLifeLine.getId().equals(targetLifeLine.getId())){
+                                parentMessage.setCallerObject("this");
+                            }else {
+                                parentMessage.setCallerObject(targetLifeLine.getName());
+                            }
                             int weight = 0;
                             parentMessage.setWeight(weight++);
                             if (startMessage.signature != null) {
@@ -235,7 +241,14 @@ public class Driver {
                                     childMessage.setId(child._id);
                                     childMessage.setWeight(weight++);
                                     childMessage.setArguments(child.arguments);
-                                    childMessage.setCallerObject(childTarget.getName());
+
+                                    if(childSource.getId().equals(childTarget.getId())){
+                                        childMessage.setCallerObject("this");
+                                    }else {
+                                        childMessage.setCallerObject(childTarget.getName());
+                                    }
+
+
                                     if (child.signature != null) {
                                         childMessage.setSignature(child.signature.$ref);
                                     }
@@ -348,29 +361,58 @@ public class Driver {
                 }
             }
         }
-
-        //printAllData(metaClasses);
-//        while (rootMessage.childNodes != null || rootMessage.childNodes.size() > 0) {
-//            System.out.println("parent " + rootMessage.name);
-//            for (MethodInvocation child : rootMessage.childNodes) {
+//
+////        printAllData(metaClasses);
+//        while (parentMessage.childNodes != null || parentMessage.childNodes.size() > 0) {
+//            System.out.println("parent " + parentMessage.name);
+//            for (MethodInvocation child : parentMessage.childNodes) {
 //                System.out.println("child " + child.name);
 //            }
-//            if (rootMessage.childNodes.size() > 0) {
-//                rootMessage = rootMessage.childNodes.get(0);
+//            if (parentMessage.childNodes.size() > 0) {
+//                parentMessage = parentMessage.childNodes.get(0);
 //            } else {
 //                break;
 //            }
 //        }
 
         mainPackage.print();
+        File dir = new File("/home/ramyashenoy/Desktop/DemoFolder/" + mainPackage.getName());
 
-        for (MetaClass metaClass : metaClasses) {
-            if (metaClass.name.equals("Main")) {
-                continue;
-            } else {
-                metaClass.print();
+        boolean successful = dir.mkdir();
+        if (successful)
+        {
+            System.out.println("directory was created successfully");
+            for (MetaClass metaClass : metaClasses) {
+                if (metaClass.name.equals("Main")) {
+                    continue;
+                } else {
+                    String data = metaClass.print();
+                    BufferedWriter out = null;
+                    try
+                    {
+                        FileWriter fstream = new FileWriter(dir.getPath() + "/" + metaClass.name + ".java", true); //true tells to append data.
+                        out = new BufferedWriter(fstream);
+                        out.write(data);
+                    }
+                    catch (IOException e)
+                    {
+                        System.err.println("Error: " + e.getMessage());
+                    }
+                    finally
+                    {
+                        if(out != null) {
+                            out.close();
+                        }
+                    }
+                }
             }
         }
+        else
+        {
+            // creating the directory failed
+            System.out.println("failed trying to create the directory");
+        }
+
         mainPackage.setClasses(metaClasses);
     }
 

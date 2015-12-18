@@ -87,7 +87,8 @@ public class Conditional extends Instruction {
         }
         data+="\t\t" + "}";
         if(alt != null){
-            data+="\t\t" + "else{";
+            data+="\n";
+            data+="\t\t" + "else{\n";
             for(Instruction instruction: this.alternative){
                 MethodInvocation methodInvocation = (MethodInvocation) instruction;
                 data+=methodInvocation.print()+"\n";

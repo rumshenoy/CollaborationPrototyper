@@ -210,7 +210,12 @@ public class MethodInvocation extends Instruction {
             data+=");";
         }else{
             if(this.messageSort.equals("reply")){
-                data+="\t\treturn " + this.name + ";";
+                if(this.name.equals("return")){
+                    data+="\t\treturn" + ";";
+
+                }else{
+                    data+="\t\treturn " + this.name + ";";
+                }
             }
 
             if(this.messageSort.equals("synchCall")){
