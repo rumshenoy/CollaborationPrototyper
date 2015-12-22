@@ -21,5 +21,7 @@ The software architect or modeler prepares a UML collaboration with necessary de
 On importing the project, you have to build the artifact and  the cbpro.jar file will be generated. It takes in the input file as the argument. 
 
 ```
-java -jar cbpro.jar input file
+java -jar cbpro.jar input_file
+Example: java -jar cbpro.jar ProxyPattern.mdj
 ```
+
