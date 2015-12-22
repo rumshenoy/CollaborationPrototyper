@@ -1,3 +1,5 @@
+package com.cbpro.main;
+
 import com.google.gson.*;
 
 import java.io.*;
@@ -365,7 +367,7 @@ public class Program {
 ////        printAllData(metaClasses);
 //        while (parentMessage.childNodes != null || parentMessage.childNodes.size() > 0) {
 //            System.out.println("parent " + parentMessage.name);
-//            for (MethodInvocation child : parentMessage.childNodes) {
+//            for (com.cbpro.main.MethodInvocation child : parentMessage.childNodes) {
 //                System.out.println("child " + child.name);
 //            }
 //            if (parentMessage.childNodes.size() > 0) {
