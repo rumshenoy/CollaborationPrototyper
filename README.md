@@ -4,7 +4,7 @@
 
 This project is my Master's thesis. The main idea of Collaboration Prototyper is to generate near complete prototypes from UML Collaborations (defined next). In the software development process, the 60% of the time, key stakeholders find that the product differs from their initial specification and requirements. The requirements are lost due to a long pipeline of procedures and people in between. If we could take the requirement specification consisting of analysis models and usecases directly, and generate a prototype from it, we could try and reduce this gap between the expectation and delivery of the product. 
 
-![Software Development Process](https://cloud.githubusercontent.com/assets/1961478/11947061/9656c14c-a816-11e5-9a0a-231673fee252.png)
+->![Software Development Process](https://cloud.githubusercontent.com/assets/1961478/11947061/9656c14c-a816-11e5-9a0a-231673fee252.png)<-
 
 ### What are Collaborations?
 
